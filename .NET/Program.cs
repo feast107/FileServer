@@ -1,19 +1,14 @@
-using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Text.Json.Serialization;
-using FileServer;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.Net.Http.Headers;
-using FileSystemInfo = FileServer.FileSystemInfo;
 
 var builder = WebApplication.CreateSlimBuilder(args);
-
 builder.WebHost.UseKestrel(x =>
 {
+    x.Limits.MaxRequestBodySize = long.MaxValue;
     x.ListenAnyIP(int.TryParse(x.ApplicationServices.GetRequiredService<IConfiguration>()["Port"], out var port)
         ? port
-        : 6123);
+        : 5310);
 });
 
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -84,36 +79,33 @@ static async Task<IResult> Save(Stream fileStream, string path)
     return Results.Ok();
 }
 
-namespace FileServer
+public record FileSystemInfo
 {
-    public record FileSystemInfo
+    public FileSystemInfo(DriveInfo drive)
     {
-        public FileSystemInfo(DriveInfo drive)
-        {
-            Name      = Path = drive.Name;
-            IsFile    = false;
-            Extension = string.Empty;
-            Display   = drive.VolumeLabel;
-        }
-
-        public FileSystemInfo(string path)
-        {
-            Path      = path;
-            Name      = Display = System.IO.Path.GetFileName(path);
-            IsFile    = File.Exists(path);
-            Extension = System.IO.Path.GetExtension(path);
-        }
-
-        public string Name      { get; set; }
-        public string Path      { get; set; }
-        public bool   IsFile    { get; set; }
-        public string Extension { get; set; }
-        public string Display   { get; set; }
-
-        public static implicit operator FileSystemInfo(string path) => new(path);
+        Name      = Path = drive.Name;
+        IsFile    = false;
+        Extension = string.Empty;
+        Display   = drive.VolumeLabel;
     }
 
+    public FileSystemInfo(string path)
+    {
+        Path      = path;
+        Name      = Display = System.IO.Path.GetFileName(path);
+        IsFile    = File.Exists(path);
+        Extension = System.IO.Path.GetExtension(path);
+    }
 
-    [JsonSerializable(typeof(FileSystemInfo[]))]
-    public partial class AppSerializerContext : JsonSerializerContext;
+    public string Name      { get; set; }
+    public string Path      { get; set; }
+    public bool   IsFile    { get; set; }
+    public string Extension { get; set; }
+    public string Display   { get; set; }
+
+    public static implicit operator FileSystemInfo(string path) => new(path);
 }
+
+
+[JsonSerializable(typeof(FileSystemInfo[]))]
+public partial class AppSerializerContext : JsonSerializerContext;
