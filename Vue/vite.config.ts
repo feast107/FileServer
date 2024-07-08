@@ -8,10 +8,14 @@ export default defineConfig(
 		server : {
 			proxy: {
 				'/tree': {
-					target: "http://localhost:9567/tree",
+					target: "http://127.0.0.1:5310/",
+					rewrite(path){
+						console.log(path)
+						return path
+					}
 				},
 				'/upload': {
-					target: "http://localhost:9567/upload",
+					target: "http://127.0.0.1:5310/",
 				}
 			},
 		}

@@ -70,9 +70,9 @@ return;
 
 static async Task<IResult> Save(Stream fileStream, string path)
 {
-    if (!Path.IsPathRooted(path)) path = Path.Combine(AppContext.BaseDirectory, "wwwroot", path);
+    if (!Path.IsPathRooted(path)) path = Path.Combine(AppContext.BaseDirectory, "wwwroot", DateTime.Today.ToString("yyyy-M-d") , path);
     var dir                            = Path.GetDirectoryName(path);
-    if (File.Exists(path) || Directory.Exists(path) || dir is null) return Results.Conflict();
+    if (dir is null) return Results.Forbid();
     if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
     await using var stream = File.Create(path);
     await fileStream.CopyToAsync(stream);

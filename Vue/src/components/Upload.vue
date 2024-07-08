@@ -19,7 +19,7 @@ function onChange(file : UploadFile) {
 		<template #header>
 			上传
 		</template>
-		<el-upload drag :action="data.target" :on-change="onChange">
+		<el-upload multiple drag :action="data.target" :on-change="onChange">
 			<el-icon class="el-icon--upload">
 				<upload-filled />
 			</el-icon>

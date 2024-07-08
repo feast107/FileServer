@@ -43,8 +43,8 @@ onMounted(async () => {
 <template>
 	<el-card style="margin: 16px;">
 		<template #header>
-			<el-scrollbar>
-				<el-breadcrumb separator="/" style="white-space: nowrap">
+			<el-scrollbar >
+				<el-breadcrumb separator="/" style="display: flex;width: fit-content">
 					<el-breadcrumb-item>
 						<el-button @click="init" :text="true" :type="'primary'">此电脑</el-button>
 					</el-breadcrumb-item>
@@ -77,5 +77,10 @@ onMounted(async () => {
 <style>
 .el-card__body {
 	height: calc(100% - 100px);
+}
+
+.el-scrollbar__view{
+	height: 100%;
+	width: fit-content;
 }
 </style>
