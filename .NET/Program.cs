@@ -1,14 +1,21 @@
 using System.Net.Mime;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 builder.WebHost.UseKestrel(x =>
 {
-    x.Limits.MaxRequestBodySize = long.MaxValue;
+    x.Limits.MaxRequestBodySize = null;
     x.ListenAnyIP(int.TryParse(x.ApplicationServices.GetRequiredService<IConfiguration>()["Port"], out var port)
         ? port
         : 5310);
+});
+
+builder.Services.Configure<FormOptions>(x =>
+{
+    x.MultipartBodyLengthLimit = int.MaxValue;
+    x.ValueLengthLimit         = int.MaxValue;
 });
 
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -34,10 +41,8 @@ app.MapGet("/view/{**rest}", (string rest) =>
         _      => null
     });
 });
-var upload = app.MapGroup("/upload");
-
-upload.MapPost("/{**rest}", async (HttpRequest request, [FromRoute] string rest) =>
-await Save(request.Body, rest));
+app.MapPost("/upload", async ([FromForm] IFormFile file) => await Save(file))
+    .DisableAntiforgery();
 
 var tree = app.MapGroup("/tree");
 
@@ -68,14 +73,16 @@ app.UseAntiforgery();
 app.Run();
 return;
 
-static async Task<IResult> Save(Stream fileStream, string path)
+static async Task<IResult> Save(IFormFile formFile)
 {
-    if (!Path.IsPathRooted(path)) path = Path.Combine(AppContext.BaseDirectory, "wwwroot", DateTime.Today.ToString("yyyy-M-d") , path);
-    var dir                            = Path.GetDirectoryName(path);
+    var path = formFile.FileName;
+    if (!Path.IsPathRooted(path))
+        path = Path.Combine(AppContext.BaseDirectory, "wwwroot", DateTime.Today.ToString("yyyy-M-d"), path);
+    var dir = Path.GetDirectoryName(path);
     if (dir is null) return Results.Forbid();
     if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
     await using var stream = File.Create(path);
-    await fileStream.CopyToAsync(stream);
+    await formFile.CopyToAsync(stream);
     return Results.Ok();
 }
 

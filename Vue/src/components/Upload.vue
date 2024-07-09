@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {UploadFilled} from '@element-plus/icons-vue'
-import {UploadFile} from "element-plus";
+import {UploadRequestOptions} from "element-plus";
 import {reactive} from "vue";
 
 const data = reactive(
@@ -8,10 +8,16 @@ const data = reactive(
 		target: '/upload/'
 	})
 
-function onChange(file : UploadFile) {
-	data.target = '/upload/' + file.name
-}
 
+function httpRequest(options : UploadRequestOptions) {
+	const ret = new XMLHttpRequest()
+	const form = new FormData();
+	form.append('file', options.file);
+	ret.open(options.method, options.action);
+	ret.send(form)
+	console.log(options)
+	return ret;
+}
 </script>
 
 <template>
@@ -19,7 +25,7 @@ function onChange(file : UploadFile) {
 		<template #header>
 			上传
 		</template>
-		<el-upload multiple drag :action="data.target" :on-change="onChange">
+		<el-upload multiple drag :action="data.target" :http-request="httpRequest" name="file">
 			<el-icon class="el-icon--upload">
 				<upload-filled />
 			</el-icon>
