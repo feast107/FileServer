@@ -43,24 +43,22 @@ onMounted(async () => {
 <template>
 	<el-card style="margin: 16px;">
 		<template #header>
-			<el-scrollbar >
+			<el-scrollbar>
 				<el-breadcrumb separator="/" style="display: flex;width: fit-content">
 					<el-breadcrumb-item>
 						<el-button @click="init" :text="true" :type="'primary'">此电脑</el-button>
 					</el-breadcrumb-item>
 					<el-breadcrumb-item v-for="(item,index) in data.deep">
-						<el-button v-if="index < data.deep.length -1" :text="true" :type="'primary'"
-						           @click="()=> back(index)">{{ item.display }}
+						<el-button :text="true" :type="'primary'" @click="()=> back(index)">{{ item.display }}
 						</el-button>
-						<el-button v-else :text="true">{{ item.display }}</el-button>
 					</el-breadcrumb-item>
 				</el-breadcrumb>
 			</el-scrollbar>
 		</template>
-		<el-table :data="data.tree" style="height: 100%">
+		<el-table :data="data.tree" style="height: 100%;" empty-text="Empty">
 			<el-table-column label="名称" fixed>
-				<template #default="item">
-					<el-button @click="()=> enter(item.row)" :text="true" :type="'primary'">
+				<template #default="item : { row : FileSystemInfo }">
+					<el-button @click="()=> enter(item.row)" :text="true" :type="item.row.isFile ? 'primary' : ''">
 						{{ item.row.display }}
 					</el-button>
 				</template>
@@ -79,7 +77,7 @@ onMounted(async () => {
 	height: calc(100% - 100px);
 }
 
-.el-scrollbar__view{
+.el-scrollbar__view {
 	height: 100%;
 	width: fit-content;
 }
