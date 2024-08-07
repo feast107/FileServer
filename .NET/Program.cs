@@ -1,7 +1,9 @@
 using System.Net.Mime;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+
 
 var builder = WebApplication.CreateSlimBuilder(args);
 builder.WebHost.UseKestrel(x =>
@@ -20,7 +22,7 @@ builder.Services.Configure<FormOptions>(x =>
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
-    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppSerializerContext.Default);
+    options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppSerializerContext.MyOption);
 });
 
 builder.Services.AddAntiforgery();
@@ -49,26 +51,20 @@ var tree = app.MapGroup("/tree");
 tree.MapGet("/", () =>
     Results.Json(DriveInfo
         .GetDrives()
-        .Select(static x => new FileSystemInfo(x))));
+        .Select(static x => new FileSystemInfo(x)), AppSerializerContext.MyOption));
 
 tree.MapGet("/{**rest}",
-    ([FromRoute] string rest) =>
-    {
-        try
-        {
-            return File.Exists(rest)
-                ? Results.Stream(File.OpenRead(rest))
-                : Directory.Exists(rest)
-                    ? Results.Json(Directory.GetFileSystemEntries(rest)
-                        .Select(x => (FileSystemInfo)x)
-                        .ToArray())
-                    : Results.NotFound();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Results.Forbid();
-        }
-    });
+            (Func<string, IResult>)
+            (([FromRoute] rest) =>
+                {
+                    return File.Exists(rest)
+                               ? Results.Stream(File.OpenRead(rest))
+                               : Directory.Exists(rest)
+                                   ? Results.Json(Directory.GetFileSystemEntries(rest)
+                                                      .Select(x => (FileSystemInfo)x),
+                                                  AppSerializerContext.MyOption)
+                                   : Results.NotFound();
+                }));
 app.UseAntiforgery();
 app.Run();
 return;
@@ -113,6 +109,11 @@ public record FileSystemInfo
     public static implicit operator FileSystemInfo(string path) => new(path);
 }
 
-
-[JsonSerializable(typeof(FileSystemInfo[]))]
-public partial class AppSerializerContext : JsonSerializerContext;
+[JsonSerializable(typeof(IEnumerable<FileSystemInfo>))]
+public partial class AppSerializerContext : JsonSerializerContext
+{
+    public static AppSerializerContext MyOption => new(new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+}
