@@ -21,7 +21,7 @@ function httpRequest(options : UploadRequestOptions) {
 </script>
 
 <template>
-	<el-card style="margin: 16px">
+	<el-card>
 		<template #header>
 			上传
 		</template>

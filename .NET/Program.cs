@@ -33,6 +33,7 @@ var views = Path.Combine(AppContext.BaseDirectory, "Views");
 var index = Path.Combine(views, "index.html");
 
 app.MapGet("/", () => Results.File(File.ReadAllBytes(index), MediaTypeNames.Text.Html));
+
 app.MapGet("/view/{**rest}", (string rest) =>
 {
     return Results.File(File.ReadAllBytes(Path.Combine(views, rest)), Path.GetExtension(rest) switch
