@@ -6,7 +6,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <InvariantGlobalization>true</InvariantGlobalization>
         <AssemblyName>fileserver</AssemblyName>
-        <RootNamespace>FileServer</RootNamespace>
         <PublishAot>true</PublishAot>
     </PropertyGroup>
 
