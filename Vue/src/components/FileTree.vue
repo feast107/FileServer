@@ -44,7 +44,7 @@ onMounted(async () => {
 </script>
 
 <template>
-	<el-card >
+	<el-card>
 		<template #header>
 			<el-scrollbar>
 				<el-breadcrumb separator="/" style="display: flex;width: fit-content">

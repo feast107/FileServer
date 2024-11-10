@@ -5,12 +5,16 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <InvariantGlobalization>true</InvariantGlobalization>
-        <AssemblyName>fileserver</AssemblyName>
-        <PublishAot>true</PublishAot>
+        <AssemblyName>interactiveserver</AssemblyName>
+        <!--<PublishAot>true</PublishAot>-->
     </PropertyGroup>
 
     <ItemGroup>
         <Content Include="../Vue/dist/**" LinkBase="Views" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Antelcat.AspNetCore.WebSocket" Version="0.1.3" />
     </ItemGroup>
 
 </Project>

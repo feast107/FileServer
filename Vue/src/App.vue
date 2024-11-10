@@ -4,7 +4,8 @@ import FileTree from "./components/FileTree.vue";
 import {onMounted, provide, reactive} from "vue";
 import {Fold} from "@element-plus/icons-vue";
 import Animation from "./components/Animation.vue";
-import Terminal, {TerminalSession} from "./components/Terminal.vue";
+import Terminal from "./components/Terminal.vue";
+import {TerminalSession} from "./models/TerminalSession.ts";
 
 function collapseChange() {
 	/*if (!state.collapse) {
@@ -36,9 +37,20 @@ const state = reactive<GlobalState>(
 		menuWidth: 0,
 		menuStyle: '',
 		openTerminal(path : string) {
+			const id = new Date().getTime().toString()
 			this.main = 'tr'
-			this.terminals.push({path, outputs: []})
-			this.lastTerminal = path
+			const session = reactive(new TerminalSession({id, path}));
+			session.open.then(() =>
+			                  {
+								  session.ready = true
+				                  session.send(path)
+			                  })
+			session.onMessage((s) => {
+				console.log(s)
+				session.payloads.push(s)
+			})
+			this.terminals.push(session as TerminalSession)
+			this.lastTerminal = id
 			this.menuIndex = '3'
 		},
 		terminals   : [],

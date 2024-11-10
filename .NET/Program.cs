@@ -1,8 +1,11 @@
 using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using InteractiveServer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebSockets;
+using FileSystemInfo = InteractiveServer.FileSystemInfo;
 
 
 var builder = WebApplication.CreateSlimBuilder(args);
@@ -13,7 +16,6 @@ builder.WebHost.UseKestrel(x =>
         ? port
         : 5310);
 });
-
 builder.Services.Configure<FormOptions>(x =>
 {
     x.MultipartBodyLengthLimit = int.MaxValue;
@@ -24,6 +26,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppSerializerContext.MyOption);
 });
+builder.Services.AddScoped<TerminalClient>();
 
 builder.Services.AddAntiforgery();
 
@@ -58,15 +61,24 @@ tree.MapGet("/{**rest}",
             (Func<string, IResult>)
             (([FromRoute] rest) =>
                 {
-                    return File.Exists(rest)
-                               ? Results.Stream(File.OpenRead(rest))
-                               : Directory.Exists(rest)
-                                   ? Results.Json(Directory.GetFileSystemEntries(rest)
-                                                      .Select(x => (FileSystemInfo)x),
-                                                  AppSerializerContext.MyOption)
-                                   : Results.NotFound();
+                    try
+                    {
+                        return File.Exists(rest)
+                            ? Results.Stream(File.OpenRead(rest))
+                            : Directory.Exists(rest)
+                                ? Results.Json(Directory.GetFileSystemEntries(rest)
+                                        .Select(x => (FileSystemInfo)x),
+                                    AppSerializerContext.MyOption)
+                                : Results.NotFound();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Results.Problem(ex.Message);
+                    }
                 }));
 app.UseAntiforgery();
+app.UseWebSockets();
+app.MapWebSocket<TerminalClient>("/terminal");
 app.Run();
 return;
 
@@ -83,38 +95,13 @@ static async Task<IResult> Save(IFormFile formFile)
     return Results.Ok();
 }
 
-public record FileSystemInfo
-{
-    public FileSystemInfo(DriveInfo drive)
-    {
-        Name      = Path = drive.Name;
-        IsFile    = false;
-        Extension = string.Empty;
-        Display   = drive.VolumeLabel;
-    }
-
-    public FileSystemInfo(string path)
-    {
-        Path      = path;
-        Name      = Display = System.IO.Path.GetFileName(path);
-        IsFile    = File.Exists(path);
-        Extension = System.IO.Path.GetExtension(path);
-    }
-
-    public string Name      { get; set; }
-    public string Path      { get; set; }
-    public bool   IsFile    { get; set; }
-    public string Extension { get; set; }
-    public string Display   { get; set; }
-
-    public static implicit operator FileSystemInfo(string path) => new(path);
-}
-
 [JsonSerializable(typeof(IEnumerable<FileSystemInfo>))]
+[JsonSerializable(typeof(TerminalPayload))]
 public partial class AppSerializerContext : JsonSerializerContext
 {
     public static AppSerializerContext MyOption => new(new JsonSerializerOptions
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy        = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
     });
 }
